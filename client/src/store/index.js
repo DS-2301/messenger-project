@@ -32,7 +32,7 @@ export default createStore(
   compose(
     applyMiddleware(thunkMiddleware, loggerMiddleware),
     window.__REDUX_DEVTOOLS_EXTENSION__
-      ? window.__REDUX_DEVTOOLS_EXTENSION__()
+      ? window.__REDUX_DEVTOOLS_EXTENSION__({trace: true })
       : (f) => f
   )
 );
