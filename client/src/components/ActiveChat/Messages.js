@@ -2,7 +2,6 @@ import React from "react";
 import { Box, makeStyles } from "@material-ui/core";
 import { SenderBubble, OtherUserBubble } from "../ActiveChat";
 import moment from "moment";
-import memorize from "./memorize"
 
 const useStyles = makeStyles(() => ({
   messageContainer: {
@@ -16,12 +15,6 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
-const fixMessagesOrder = (messages) => {
-  return messages.reverse()
-}
-
-const rightOrderMessages= memorize(fixMessagesOrder)
-
 const Messages = (props) => {
   const { messages, otherUser, userId } = props;
   const classes = useStyles();
@@ -29,7 +22,7 @@ const Messages = (props) => {
     
     <Box className={classes.messageContainer}>
       <Box className={classes.scrollContainer}>
-        {rightOrderMessages(messages).map((message) => {
+        {messages.map((message) => {
           const time = moment(message.createdAt).format("h:mm");
           return message.senderId === userId ? (
             <SenderBubble key={message.id} text={message.text} time={time} />
