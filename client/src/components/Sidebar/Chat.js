@@ -1,8 +1,8 @@
-import React, { Component } from "react";
+import React, { useMemo } from "react";
 import { Box } from "@material-ui/core";
 import { BadgeAvatar, ChatContent } from "../Sidebar";
 import { withStyles } from "@material-ui/core/styles";
-import { setActiveChat } from "../../store/activeConversation";
+import { readMessages } from "../../store/utils/thunkCreators";
 import { connect } from "react-redux";
 
 const styles = {
@@ -19,35 +19,51 @@ const styles = {
   },
 };
 
-class Chat extends Component {
-  handleClick = async (conversation) => {
-    await this.props.setActiveChat(conversation.id);
+const Chat = (props) => {
+  const handleClick = async (username, unreadMessages, convoId) => {
+    await props.readMessages(unreadMessages, username, convoId);
   };
 
-  render() {
-    const { classes } = this.props;
-    const otherUser = this.props.conversation.otherUser;
-    return (
-      <Box
-        onClick={() => this.handleClick(this.props.conversation)}
-        className={classes.root}
-      >
-        <BadgeAvatar
-          photoUrl={otherUser.photoUrl}
-          username={otherUser.username}
-          online={otherUser.online}
-          sidebar={true}
-        />
-        <ChatContent conversation={this.props.conversation} />
-      </Box>
-    );
-  }
-}
+  const { classes, userId } = props;
+  const otherUser = props.conversation.otherUser;
+
+  const unreadMessages = useMemo(
+    () =>
+      props.conversation.messages &&
+      props.conversation.messages.filter(
+        (message) => !message.hasBeenSeen && message.senderId !== userId
+      ),
+    [props.conversation, userId]
+  );
+
+  const unreadMessagesNum = useMemo(
+    () => unreadMessages.length,
+    [unreadMessages]
+  );
+
+  return (
+    <Box
+      onClick={() =>
+        handleClick(otherUser.username, unreadMessages, props.conversation.id)
+      }
+      className={classes.root}
+    >
+      <BadgeAvatar
+        photoUrl={otherUser.photoUrl}
+        username={otherUser.username}
+        online={otherUser.online}
+        sidebar={true}
+      />
+      <ChatContent conversation={props.conversation} />
+      <p>{unreadMessagesNum}</p>
+    </Box>
+  );
+};
 
 const mapDispatchToProps = (dispatch) => {
   return {
-    setActiveChat: (id) => {
-      dispatch(setActiveChat(id));
+    readMessages: (messages, username, convoId) => {
+      dispatch(readMessages(messages, username, convoId));
     },
   };
 };

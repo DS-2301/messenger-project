@@ -58,7 +58,7 @@ const mapStateToProps = (state) => {
       state.conversations &&
       state.conversations.find(
         (conversation) =>
-          conversation.id === state.activeConversation
+          conversation.otherUser.username === state.activeConversation
       ),
   };
 };

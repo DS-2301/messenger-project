@@ -1,16 +1,16 @@
 const SET_ACTIVE_CHAT = "SET_ACTIVE_CHAT";
 
-export const setActiveChat = (id) => {
+export const setActiveChat = (username) => {
   return {
     type: SET_ACTIVE_CHAT,
-    id
+    username,
   };
 };
 
 const reducer = (state = "", action) => {
   switch (action.type) {
     case SET_ACTIVE_CHAT: {
-      return action.id;
+      return action.username;
     }
     default:
       return state;

@@ -80,3 +80,19 @@ export const addNewConvoToStore = (state, recipientId, message) => {
     }
   });
 };
+
+export const setMessagesStatus = (state, msgIds, convoId) => {
+  return state.map((convo) => {
+    console.log("hey");
+    if (convo.id === convoId) {
+      const newConvo = { ...convo };
+      newConvo.messages = newConvo.messages.map((message) => {
+        if (msgIds.includes(message)) message.hasBeenSeen = true;
+        return message;
+      });
+      return newConvo;
+    } else {
+      return convo;
+    }
+  });
+};

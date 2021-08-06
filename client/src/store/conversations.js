@@ -4,6 +4,7 @@ import {
   addSearchedUsersToStore,
   removeOfflineUserFromStore,
   addMessageToStore,
+  setMessagesStatus,
 } from "./utils/reducerFunctions";
 
 // ACTIONS
@@ -15,6 +16,7 @@ const REMOVE_OFFLINE_USER = "REMOVE_OFFLINE_USER";
 const SET_SEARCHED_USERS = "SET_SEARCHED_USERS";
 const CLEAR_SEARCHED_USERS = "CLEAR_SEARCHED_USERS";
 const ADD_CONVERSATION = "ADD_CONVERSATION";
+const SET_HAS_BEEN_SEEN_STATUS = "SET_HAS_BEEN_SEEN_STATUS";
 
 // ACTION CREATORS
 
@@ -67,6 +69,13 @@ export const addConversation = (recipientId, newMessage) => {
   };
 };
 
+export const setHasBeenSeenStatus = (msgIds, convoId) => {
+  return {
+    type: SET_HAS_BEEN_SEEN_STATUS,
+    payload: { msgIds, convoId },
+  };
+};
+
 // REDUCER
 
 const reducer = (state = [], action) => {
@@ -90,6 +99,12 @@ const reducer = (state = [], action) => {
         state,
         action.payload.recipientId,
         action.payload.newMessage
+      );
+    case SET_HAS_BEEN_SEEN_STATUS:
+      return setMessagesStatus(
+        state,
+        action.payload.msgIds,
+        action.payload.convoId
       );
     default:
       return state;

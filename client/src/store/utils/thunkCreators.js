@@ -5,8 +5,10 @@ import {
   addConversation,
   setNewMessage,
   setSearchedUsers,
+  setHasBeenSeenStatus,
 } from "../conversations";
 import { gotUser, setFetchingStatus } from "../user";
+import { setActiveChat } from "../activeConversation";
 
 axios.interceptors.request.use(async function (config) {
   const token = await localStorage.getItem("messenger-token");
@@ -79,7 +81,7 @@ export const fetchConversations = () => async (dispatch) => {
 };
 
 const saveMessage = async (body) => {
-  const {data} = await axios.post("/api/messages", body);
+  const { data } = await axios.post("/api/messages", body);
   return data;
 };
 
@@ -88,6 +90,18 @@ const sendMessage = (data, body) => {
     message: data.message,
     recipientId: body.recipientId,
     sender: data.sender,
+  });
+};
+
+const saveReadMessages = async (ids) => {
+  const { data } = await axios.patch("api/messages", { ids: ids });
+  return data;
+};
+
+const emitReadMessages = (msgIds, convoId) => {
+  socket.emit("read-messages", {
+    msgIds: msgIds,
+    convoId: convoId,
   });
 };
 
@@ -115,3 +129,17 @@ export const searchUsers = (searchTerm) => async (dispatch) => {
     console.error(error);
   }
 };
+
+export const readMessages =
+  (messages, username, convoId) => async (dispatch) => {
+    try {
+      if (messages.length > 0) {
+        await saveReadMessages(messages.map((message) => message.id));
+        emitReadMessages(messages, convoId);
+        dispatch(setHasBeenSeenStatus(messages, convoId));
+      }
+      dispatch(setActiveChat(username));
+    } catch (error) {
+      console.error(error);
+    }
+  };
