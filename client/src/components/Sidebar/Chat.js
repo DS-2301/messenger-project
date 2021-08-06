@@ -17,6 +17,16 @@ const styles = {
       cursor: "grab",
     },
   },
+  unreadIndicator: {
+    borderRadius: "2em",
+    border: "1px solid",
+    padding: "0.5em 1em",
+    fontSize: "0.7em",
+    color: "white",
+    backgroundColor: "#3A8DFF",
+    fontWeight: 600,
+    marginRight: "1em",
+  },
 };
 
 const Chat = (props) => {
@@ -55,7 +65,9 @@ const Chat = (props) => {
         sidebar={true}
       />
       <ChatContent conversation={props.conversation} />
-      <p>{unreadMessagesNum}</p>
+      {unreadMessagesNum > 0 && (
+        <span className={classes.unreadIndicator}>{unreadMessagesNum}</span>
+      )}
     </Box>
   );
 };

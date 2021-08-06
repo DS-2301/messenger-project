@@ -94,15 +94,7 @@ const sendMessage = (data, body) => {
 };
 
 const saveReadMessages = async (ids) => {
-  const { data } = await axios.patch("api/messages", { ids: ids });
-  return data;
-};
-
-const emitReadMessages = (msgIds, convoId) => {
-  socket.emit("read-messages", {
-    msgIds: msgIds,
-    convoId: convoId,
-  });
+  await axios.patch("api/messages", { ids: ids });
 };
 
 // message format to send: {recipientId, text, conversationId}
@@ -135,10 +127,9 @@ export const readMessages =
     try {
       if (messages.length > 0) {
         await saveReadMessages(messages.map((message) => message.id));
-        emitReadMessages(messages, convoId);
         dispatch(setHasBeenSeenStatus(messages, convoId));
       }
-      dispatch(setActiveChat(username));
+      dispatch(setActiveChat(username, convoId));
     } catch (error) {
       console.error(error);
     }
