@@ -5,7 +5,7 @@ import { connect } from "react-redux";
 import { Grid, CssBaseline, Button } from "@material-ui/core";
 import { SidebarContainer } from "./Sidebar";
 import { ActiveChat } from "./ActiveChat";
-import { logout, fetchConversations } from "../store/utils/thunkCreators";
+import { fetchConversations, logout } from "../store/utils/thunkCreators";
 import { clearOnLogout } from "../store/index";
 
 const styles = {
@@ -31,7 +31,7 @@ class Home extends Component {
   }
 
   componentDidMount() {
-    this.props.fetchConversations();
+    this.props.fetchConversations(this.props.user.id);
   }
 
   handleLogout = async () => {
@@ -74,8 +74,8 @@ const mapDispatchToProps = (dispatch) => {
       dispatch(logout(id));
       dispatch(clearOnLogout());
     },
-    fetchConversations: () => {
-      dispatch(fetchConversations());
+    fetchConversations: (userId) => {
+      dispatch(fetchConversations(userId));
     },
   };
 };

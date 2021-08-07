@@ -1,5 +1,4 @@
-import React, { useMemo } from "react";
-import { Box } from "@material-ui/core";
+import { Badge, Box } from "@material-ui/core";
 import { BadgeAvatar, ChatContent } from "../Sidebar";
 import { withStyles } from "@material-ui/core/styles";
 import { readMessages } from "../../store/utils/thunkCreators";
@@ -18,14 +17,7 @@ const styles = {
     },
   },
   unreadIndicator: {
-    borderRadius: "2em",
-    border: "1px solid",
-    padding: "0.5em 1em",
-    fontSize: "0.7em",
-    color: "white",
-    backgroundColor: "#3A8DFF",
-    fontWeight: 600,
-    marginRight: "1em",
+    marginRight: "2em",
   },
 };
 
@@ -34,27 +26,17 @@ const Chat = (props) => {
     await props.readMessages(unreadMessages, username, convoId);
   };
 
-  const { classes, userId } = props;
+  const { classes } = props;
   const otherUser = props.conversation.otherUser;
-
-  const unreadMessages = useMemo(
-    () =>
-      props.conversation.messages &&
-      props.conversation.messages.filter(
-        (message) => !message.hasBeenSeen && message.senderId !== userId
-      ),
-    [props.conversation, userId]
-  );
-
-  const unreadMessagesNum = useMemo(
-    () => unreadMessages.length,
-    [unreadMessages]
-  );
 
   return (
     <Box
       onClick={() =>
-        handleClick(otherUser.username, unreadMessages, props.conversation.id)
+        handleClick(
+          otherUser.username,
+          props.conversation.unreadMessages,
+          props.conversation.id
+        )
       }
       className={classes.root}
     >
@@ -64,9 +46,17 @@ const Chat = (props) => {
         online={otherUser.online}
         sidebar={true}
       />
-      <ChatContent conversation={props.conversation} />
-      {unreadMessagesNum > 0 && (
-        <span className={classes.unreadIndicator}>{unreadMessagesNum}</span>
+      {props.conversation.unreadMessagesNum > 0 ? (
+        <>
+          <ChatContent conversation={props.conversation} unread={true} />
+          <Badge
+            color="primary"
+            badgeContent={props.conversation.unreadMessagesNum}
+            className={classes.unreadIndicator}
+          />
+        </>
+      ) : (
+        <ChatContent conversation={props.conversation} />
       )}
     </Box>
   );

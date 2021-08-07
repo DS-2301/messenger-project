@@ -12,8 +12,9 @@ const Message = db.define("message", {
   },
   hasBeenSeen: {
     type: Sequelize.BOOLEAN,
-    defaultValue: false
-  }
+    defaultValue: false,
+    allowNull: false,
+  },
 });
 
 module.exports = Message;

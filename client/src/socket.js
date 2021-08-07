@@ -1,12 +1,10 @@
-import axios from "axios";
 import io from "socket.io-client";
 import store from "./store";
+import { removeOfflineUser, addOnlineUser } from "./store/conversations";
 import {
-  setNewMessage,
-  removeOfflineUser,
-  addOnlineUser,
-  setHasBeenSeenStatus,
-} from "./store/conversations";
+  getUpcomingMessage,
+  receiveLastSeenMessage,
+} from "./store/utils/thunkCreators";
 
 const socket = io(window.location.origin);
 
@@ -21,16 +19,12 @@ socket.on("connect", () => {
     store.dispatch(removeOfflineUser(id));
   });
 
-  socket.on("new-message", async (data) => {
-    store.dispatch(setNewMessage(data.message, data.sender));
-    if (
-      store.getState().activeConversation.id === data.message.conversationId
-    ) {
-      await axios.patch("api/messages", { ids: [data.message.id] });
-      store.dispatch(
-        setHasBeenSeenStatus([data.message], data.message.conversationId)
-      );
-    }
+  socket.on("new-message", (data) => {
+    store.dispatch(getUpcomingMessage(data));
+  });
+
+  socket.on("read-message", (data) => {
+    store.dispatch(receiveLastSeenMessage(data));
   });
 });
 

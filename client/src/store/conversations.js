@@ -5,6 +5,11 @@ import {
   removeOfflineUserFromStore,
   addMessageToStore,
   setMessagesStatus,
+  setUnreadMessagesNum,
+  incrementUnreadMessagesInStore,
+  readUnreadMessages,
+  addLatestReadMessageToStore,
+  addLatestReadMessageForAllConversationsToStore,
 } from "./utils/reducerFunctions";
 
 // ACTIONS
@@ -17,6 +22,12 @@ const SET_SEARCHED_USERS = "SET_SEARCHED_USERS";
 const CLEAR_SEARCHED_USERS = "CLEAR_SEARCHED_USERS";
 const ADD_CONVERSATION = "ADD_CONVERSATION";
 const SET_HAS_BEEN_SEEN_STATUS = "SET_HAS_BEEN_SEEN_STATUS";
+const CALCULATE_UNREAD_MESSAGES = "CALCULATE_UNREAD_MESSAGES";
+const INCREMENT_UNREAD_MESSAGES = "INCREMENT_UNREAD_MESSAGES";
+const READ_ALL_MESSAGES = "READ_ALL_MESSAGES";
+const SET_LATEST_READ_MESSAGE = "SET_LATEST_READ_MESSAGE";
+const SET_LATEST_READ_MESSAGE_FOR_ALL_CONVERSATIONS =
+  "SET_LATEST_READ_MESSAGE_FOR_ALL_CONVERSATIONS";
 
 // ACTION CREATORS
 
@@ -76,6 +87,41 @@ export const setHasBeenSeenStatus = (msgIds, convoId) => {
   };
 };
 
+export const calculateUnreadMessages = (userId, messages) => {
+  return {
+    type: CALCULATE_UNREAD_MESSAGES,
+    userId,
+  };
+};
+
+export const incrementUnreadMessages = (convoId, message) => {
+  return {
+    type: INCREMENT_UNREAD_MESSAGES,
+    payload: { convoId, message },
+  };
+};
+
+export const readAllMessages = (convoId) => {
+  return {
+    type: READ_ALL_MESSAGES,
+    convoId,
+  };
+};
+
+export const setLatestReadMessage = (convoId, message) => {
+  return {
+    type: SET_LATEST_READ_MESSAGE,
+    payload: { convoId, message },
+  };
+};
+
+export const setLatestReadMessageForAllConversations = (userId) => {
+  return {
+    type: SET_LATEST_READ_MESSAGE_FOR_ALL_CONVERSATIONS,
+    userId,
+  };
+};
+
 // REDUCER
 
 const reducer = (state = [], action) => {
@@ -105,6 +151,28 @@ const reducer = (state = [], action) => {
         state,
         action.payload.msgIds,
         action.payload.convoId
+      );
+    case CALCULATE_UNREAD_MESSAGES:
+      return setUnreadMessagesNum(state, action.userId);
+    case INCREMENT_UNREAD_MESSAGES:
+      return incrementUnreadMessagesInStore(
+        state,
+        action.payload.convoId,
+        action.payload.message
+      );
+    case READ_ALL_MESSAGES:
+      return readUnreadMessages(state, action.convoId);
+
+    case SET_LATEST_READ_MESSAGE:
+      return addLatestReadMessageToStore(
+        state,
+        action.payload.convoId,
+        action.payload.message
+      );
+    case SET_LATEST_READ_MESSAGE_FOR_ALL_CONVERSATIONS:
+      return addLatestReadMessageForAllConversationsToStore(
+        state,
+        action.userId
       );
     default:
       return state;
