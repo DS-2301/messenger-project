@@ -6,7 +6,6 @@ import {
   setNewMessage,
   setSearchedUsers,
   setHasBeenSeenStatus,
-  calculateUnreadMessages,
   incrementUnreadMessages,
   readAllMessages,
   setLatestReadMessage,
@@ -33,7 +32,8 @@ export const fetchUser = () => async (dispatch) => {
     const { data } = await axios.get("/auth/user");
     dispatch(gotUser(data));
     if (data.id) {
-      socket = initSocket(data.id);
+      const token = await localStorage.getItem("messenger-token");
+      socket = initSocket(data.id, token);
       socket.emit("go-online", data.id);
     }
   } catch (error) {
@@ -48,7 +48,8 @@ export const register = (credentials) => async (dispatch) => {
     const { data } = await axios.post("/auth/register", credentials);
     await localStorage.setItem("messenger-token", data.token);
     dispatch(gotUser(data));
-    socket = initSocket(data.id);
+    const token = await localStorage.getItem("messenger-token");
+    socket = initSocket(data.id, token);
     socket.emit("go-online", data.id);
   } catch (error) {
     console.error(error);
@@ -61,7 +62,8 @@ export const login = (credentials) => async (dispatch) => {
     const { data } = await axios.post("/auth/login", credentials);
     await localStorage.setItem("messenger-token", data.token);
     dispatch(gotUser(data));
-    socket = initSocket(data.id);
+    const token = await localStorage.getItem("messenger-token");
+    socket = initSocket(data.id, token);
     socket.emit("go-online", data.id);
   } catch (error) {
     console.error(error);
@@ -85,8 +87,7 @@ export const logout = (id) => async (dispatch) => {
 export const fetchConversations = (userId) => async (dispatch) => {
   try {
     const { data } = await axios.get("/api/conversations");
-    dispatch(gotConversations(data));
-    dispatch(calculateUnreadMessages(userId));
+    dispatch(gotConversations(data, userId));
     dispatch(setLatestReadMessageForAllConversations(userId));
   } catch (error) {
     console.error(error);
