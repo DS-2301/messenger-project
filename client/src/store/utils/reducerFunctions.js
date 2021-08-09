@@ -98,8 +98,8 @@ export const setMessagesStatus = (state, msgIds, convoId) => {
   });
 };
 
-export const setUnreadMessagesNum = (state, userId) => {
-  return state.map((convo) => {
+export const getConvos = (conversations, userId) => {
+  return conversations.map((convo) => {
     const newConvo = { ...convo };
     newConvo.unreadMessages =
       newConvo.messages &&
