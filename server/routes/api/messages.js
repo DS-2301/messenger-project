@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const { Conversation, Message } = require("../../db/models");
 const onlineUsers = require("../../onlineUsers");
+const { Op } = require("sequelize");
 
 // expects {recipientId, text, conversationId } in body (conversationId will be null if no conversation exists yet)
 router.post("/", async (req, res, next) => {
@@ -11,16 +12,22 @@ router.post("/", async (req, res, next) => {
     const senderId = req.user.id;
     const { recipientId, text, conversationId, sender } = req.body;
 
-    // if we already know conversation id, we can save time and just add it to message and return
-    if (conversationId) {
-      const message = await Message.create({ senderId, text, conversationId });
-      return res.json({ message, sender });
-    }
-    // if we don't have conversation id, find a conversation to make sure it doesn't already exist
     let conversation = await Conversation.findConversation(
       senderId,
       recipientId
     );
+
+    // if we already know conversation id, we can save time and just add it to message and return
+    if (conversationId && conversation) {
+      if (conversationId === conversation.id) {
+        const message = await Message.create({
+          senderId,
+          text,
+          conversationId,
+        });
+        return res.json({ message, sender });
+      } else return res.sendStatus(403);
+    }
 
     if (!conversation) {
       // create conversation
@@ -28,7 +35,7 @@ router.post("/", async (req, res, next) => {
         user1Id: senderId,
         user2Id: recipientId,
       });
-      if (onlineUsers.includes(sender.id)) {
+      if (onlineUsers[sender.id]) {
         sender.online = true;
       }
     }
@@ -38,6 +45,21 @@ router.post("/", async (req, res, next) => {
       conversationId: conversation.id,
     });
     res.json({ message, sender });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.patch("/", async (req, res, next) => {
+  try {
+    if (!req.body.ids) {
+      return res.sendStatus(400);
+    }
+    const result = await Message.update(
+      { hasBeenSeen: true },
+      { where: { id: { [Op.in]: req.body.ids } } }
+    );
+    return res.sendStatus(204);
   } catch (error) {
     next(error);
   }

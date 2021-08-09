@@ -1,12 +1,21 @@
 import axios from "axios";
-import socket from "../../socket";
+import initSocket from "../../socket";
 import {
   gotConversations,
   addConversation,
   setNewMessage,
   setSearchedUsers,
+  setHasBeenSeenStatus,
+  incrementUnreadMessages,
+  readAllMessages,
+  setLatestReadMessage,
+  setLatestReadMessageForAllConversations,
 } from "../conversations";
 import { gotUser, setFetchingStatus } from "../user";
+import { setActiveChat } from "../activeConversation";
+import store from "..";
+
+let socket = null;
 
 axios.interceptors.request.use(async function (config) {
   const token = await localStorage.getItem("messenger-token");
@@ -23,6 +32,8 @@ export const fetchUser = () => async (dispatch) => {
     const { data } = await axios.get("/auth/user");
     dispatch(gotUser(data));
     if (data.id) {
+      const token = await localStorage.getItem("messenger-token");
+      socket = initSocket(data.id, token);
       socket.emit("go-online", data.id);
     }
   } catch (error) {
@@ -37,6 +48,8 @@ export const register = (credentials) => async (dispatch) => {
     const { data } = await axios.post("/auth/register", credentials);
     await localStorage.setItem("messenger-token", data.token);
     dispatch(gotUser(data));
+    const token = await localStorage.getItem("messenger-token");
+    socket = initSocket(data.id, token);
     socket.emit("go-online", data.id);
   } catch (error) {
     console.error(error);
@@ -49,6 +62,8 @@ export const login = (credentials) => async (dispatch) => {
     const { data } = await axios.post("/auth/login", credentials);
     await localStorage.setItem("messenger-token", data.token);
     dispatch(gotUser(data));
+    const token = await localStorage.getItem("messenger-token");
+    socket = initSocket(data.id, token);
     socket.emit("go-online", data.id);
   } catch (error) {
     console.error(error);
@@ -69,10 +84,11 @@ export const logout = (id) => async (dispatch) => {
 
 // CONVERSATIONS THUNK CREATORS
 
-export const fetchConversations = () => async (dispatch) => {
+export const fetchConversations = (userId) => async (dispatch) => {
   try {
     const { data } = await axios.get("/api/conversations");
-    dispatch(gotConversations(data));
+    dispatch(gotConversations(data, userId));
+    dispatch(setLatestReadMessageForAllConversations(userId));
   } catch (error) {
     console.error(error);
   }
@@ -88,21 +104,20 @@ const sendMessage = (data, body) => {
     message: data.message,
     recipientId: body.recipientId,
     sender: data.sender,
+    convoWith: body.conversationWith,
   });
 };
 
 // message format to send: {recipientId, text, conversationId}
 // conversationId will be set to null if its a brand new conversation
-export const postMessage = (body) => (dispatch) => {
+export const postMessage = (body) => async (dispatch) => {
   try {
-    const data = saveMessage(body);
-
+    const data = await saveMessage(body);
     if (!body.conversationId) {
       dispatch(addConversation(body.recipientId, data.message));
     } else {
       dispatch(setNewMessage(data.message));
     }
-
     sendMessage(data, body);
   } catch (error) {
     console.error(error);
@@ -116,4 +131,56 @@ export const searchUsers = (searchTerm) => async (dispatch) => {
   } catch (error) {
     console.error(error);
   }
+};
+
+const setUpcomingMessagesToSeen = (messages, convoId, recipientId) => {
+  socket.emit("read-message", {
+    messages: messages,
+    convoId: convoId,
+    recipientId: recipientId,
+  });
+};
+
+const saveReadMessages = async (ids) => {
+  await axios.patch("/api/messages", { ids: ids });
+};
+
+export const readMessages =
+  (messages, username, convoId, recipientId) => async (dispatch) => {
+    try {
+      if (messages && messages.length > 0) {
+        const msgIds = messages.map((message) => message.id);
+        await saveReadMessages(msgIds);
+        dispatch(setHasBeenSeenStatus(msgIds, convoId));
+        dispatch(readAllMessages(convoId));
+        setUpcomingMessagesToSeen(msgIds, convoId, recipientId);
+      }
+      dispatch(setActiveChat(username));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+export const getUpcomingMessage = (data) => async (dispatch) => {
+  dispatch(setNewMessage(data.message, data.sender));
+  dispatch(incrementUnreadMessages(data.message.conversationId, data.message));
+  if (store.getState().activeConversation === data.convoWith) {
+    await axios.patch("api/messages", { ids: [data.message.id] });
+    dispatch(readAllMessages(data.message.conversationId));
+    dispatch(
+      setHasBeenSeenStatus([data.message.id], data.message.conversationId)
+    );
+    setUpcomingMessagesToSeen(
+      [data.message.id],
+      data.message.conversationId,
+      data.message.senderId
+    );
+  }
+};
+
+export const receiveLastSeenMessage = (data) => (dispatch) => {
+  dispatch(setHasBeenSeenStatus(data.messages, data.convoId));
+  dispatch(
+    setLatestReadMessage(data.convoId, data.messages[data.messages.length - 1])
+  );
 };

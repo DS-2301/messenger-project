@@ -1,26 +1,34 @@
 import io from "socket.io-client";
 import store from "./store";
+import { removeOfflineUser, addOnlineUser } from "./store/conversations";
 import {
-  setNewMessage,
-  removeOfflineUser,
-  addOnlineUser,
-} from "./store/conversations";
+  getUpcomingMessage,
+  receiveLastSeenMessage,
+} from "./store/utils/thunkCreators";
 
-const socket = io(window.location.origin);
+const initSocket = (id, token) => {
+  const socket = io(window.location.origin, { auth: { id, token } });
 
-socket.on("connect", () => {
-  console.log("connected to server");
+  socket.on("connect", () => {
+    console.log("connected to server");
 
-  socket.on("add-online-user", (id) => {
-    store.dispatch(addOnlineUser(id));
+    socket.on("add-online-user", (id) => {
+      store.dispatch(addOnlineUser(id));
+    });
+
+    socket.on("remove-offline-user", (id) => {
+      store.dispatch(removeOfflineUser(id));
+    });
+
+    socket.on("new-message", (data) => {
+      store.dispatch(getUpcomingMessage(data));
+    });
+
+    socket.on("read-message", (data) => {
+      store.dispatch(receiveLastSeenMessage(data));
+    });
   });
+  return socket;
+};
 
-  socket.on("remove-offline-user", (id) => {
-    store.dispatch(removeOfflineUser(id));
-  });
-  socket.on("new-message", (data) => {
-    store.dispatch(setNewMessage(data.message, data.sender));
-  });
-});
-
-export default socket;
+export default initSocket;

@@ -1,9 +1,9 @@
 const SET_ACTIVE_CHAT = "SET_ACTIVE_CHAT";
 
-export const setActiveChat = (username) => {
+export const setActiveChat = (username, id) => {
   return {
     type: SET_ACTIVE_CHAT,
-    username
+    username,
   };
 };
 
