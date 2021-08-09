@@ -6,7 +6,6 @@ import {
   setNewMessage,
   setSearchedUsers,
   setHasBeenSeenStatus,
-  calculateUnreadMessages,
   incrementUnreadMessages,
   readAllMessages,
   setLatestReadMessage,
@@ -85,8 +84,7 @@ export const logout = (id) => async (dispatch) => {
 export const fetchConversations = (userId) => async (dispatch) => {
   try {
     const { data } = await axios.get("/api/conversations");
-    dispatch(gotConversations(data));
-    dispatch(calculateUnreadMessages(userId));
+    dispatch(gotConversations(data, userId));
     dispatch(setLatestReadMessageForAllConversations(userId));
   } catch (error) {
     console.error(error);

@@ -5,11 +5,11 @@ import {
   removeOfflineUserFromStore,
   addMessageToStore,
   setMessagesStatus,
-  setUnreadMessagesNum,
   incrementUnreadMessagesInStore,
   readUnreadMessages,
   addLatestReadMessageToStore,
   addLatestReadMessageForAllConversationsToStore,
+  getConvos,
 } from "./utils/reducerFunctions";
 
 // ACTIONS
@@ -22,7 +22,6 @@ const SET_SEARCHED_USERS = "SET_SEARCHED_USERS";
 const CLEAR_SEARCHED_USERS = "CLEAR_SEARCHED_USERS";
 const ADD_CONVERSATION = "ADD_CONVERSATION";
 const SET_HAS_BEEN_SEEN_STATUS = "SET_HAS_BEEN_SEEN_STATUS";
-const CALCULATE_UNREAD_MESSAGES = "CALCULATE_UNREAD_MESSAGES";
 const INCREMENT_UNREAD_MESSAGES = "INCREMENT_UNREAD_MESSAGES";
 const READ_ALL_MESSAGES = "READ_ALL_MESSAGES";
 const SET_LATEST_READ_MESSAGE = "SET_LATEST_READ_MESSAGE";
@@ -31,10 +30,10 @@ const SET_LATEST_READ_MESSAGE_FOR_ALL_CONVERSATIONS =
 
 // ACTION CREATORS
 
-export const gotConversations = (conversations) => {
+export const gotConversations = (conversations, userId) => {
   return {
     type: GET_CONVERSATIONS,
-    conversations,
+    payload: { conversations, userId },
   };
 };
 
@@ -87,13 +86,6 @@ export const setHasBeenSeenStatus = (msgIds, convoId) => {
   };
 };
 
-export const calculateUnreadMessages = (userId, messages) => {
-  return {
-    type: CALCULATE_UNREAD_MESSAGES,
-    userId,
-  };
-};
-
 export const incrementUnreadMessages = (convoId, message) => {
   return {
     type: INCREMENT_UNREAD_MESSAGES,
@@ -127,7 +119,7 @@ export const setLatestReadMessageForAllConversations = (userId) => {
 const reducer = (state = [], action) => {
   switch (action.type) {
     case GET_CONVERSATIONS:
-      return action.conversations;
+      return getConvos(action.payload.conversations, action.payload.userId);
     case SET_MESSAGE:
       return addMessageToStore(state, action.payload);
     case ADD_ONLINE_USER: {
@@ -152,8 +144,6 @@ const reducer = (state = [], action) => {
         action.payload.msgIds,
         action.payload.convoId
       );
-    case CALCULATE_UNREAD_MESSAGES:
-      return setUnreadMessagesNum(state, action.userId);
     case INCREMENT_UNREAD_MESSAGES:
       return incrementUnreadMessagesInStore(
         state,
