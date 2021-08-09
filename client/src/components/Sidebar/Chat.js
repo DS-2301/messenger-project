@@ -1,8 +1,7 @@
-import React, { Component } from "react";
-import { Box } from "@material-ui/core";
+import { Badge, Box } from "@material-ui/core";
 import { BadgeAvatar, ChatContent } from "../Sidebar";
 import { withStyles } from "@material-ui/core/styles";
-import { setActiveChat } from "../../store/activeConversation";
+import { readMessages } from "../../store/utils/thunkCreators";
 import { connect } from "react-redux";
 
 const styles = {
@@ -17,37 +16,56 @@ const styles = {
       cursor: "grab",
     },
   },
+  unreadIndicator: {
+    marginRight: "2em",
+  },
 };
 
-class Chat extends Component {
-  handleClick = async (conversation) => {
-    await this.props.setActiveChat(conversation.id);
+const Chat = (props) => {
+  const handleClick = async (username, unreadMessages, convoId) => {
+    await props.readMessages(unreadMessages, username, convoId);
   };
 
-  render() {
-    const { classes } = this.props;
-    const otherUser = this.props.conversation.otherUser;
-    return (
-      <Box
-        onClick={() => this.handleClick(this.props.conversation)}
-        className={classes.root}
-      >
-        <BadgeAvatar
-          photoUrl={otherUser.photoUrl}
-          username={otherUser.username}
-          online={otherUser.online}
-          sidebar={true}
-        />
-        <ChatContent conversation={this.props.conversation} />
-      </Box>
-    );
-  }
-}
+  const { classes } = props;
+  const otherUser = props.conversation.otherUser;
+
+  return (
+    <Box
+      onClick={() =>
+        handleClick(
+          otherUser.username,
+          props.conversation.unreadMessages,
+          props.conversation.id
+        )
+      }
+      className={classes.root}
+    >
+      <BadgeAvatar
+        photoUrl={otherUser.photoUrl}
+        username={otherUser.username}
+        online={otherUser.online}
+        sidebar={true}
+      />
+      {props.conversation.unreadMessagesNum > 0 ? (
+        <>
+          <ChatContent conversation={props.conversation} unread={true} />
+          <Badge
+            color="primary"
+            badgeContent={props.conversation.unreadMessagesNum}
+            className={classes.unreadIndicator}
+          />
+        </>
+      ) : (
+        <ChatContent conversation={props.conversation} />
+      )}
+    </Box>
+  );
+};
 
 const mapDispatchToProps = (dispatch) => {
   return {
-    setActiveChat: (id) => {
-      dispatch(setActiveChat(id));
+    readMessages: (messages, username, convoId) => {
+      dispatch(readMessages(messages, username, convoId));
     },
   };
 };

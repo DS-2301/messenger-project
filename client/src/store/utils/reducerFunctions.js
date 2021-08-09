@@ -80,3 +80,89 @@ export const addNewConvoToStore = (state, recipientId, message) => {
     }
   });
 };
+
+export const setMessagesStatus = (state, msgIds, convoId) => {
+  return state.map((convo) => {
+    if (convo.id === convoId) {
+      const newConvo = { ...convo };
+      newConvo.messages = newConvo.messages.map((message) => {
+        if (msgIds.includes(message.id)) {
+          message.hasBeenSeen = true;
+        }
+        return message;
+      });
+      return newConvo;
+    } else {
+      return convo;
+    }
+  });
+};
+
+export const getConvos = (conversations, userId) => {
+  return conversations.map((convo) => {
+    const newConvo = { ...convo };
+    newConvo.unreadMessages =
+      newConvo.messages &&
+      newConvo.messages.filter(
+        (message) => !message.hasBeenSeen && message.senderId !== userId
+      );
+    newConvo.unreadMessagesNum = newConvo.unreadMessages.length;
+    return newConvo;
+  });
+};
+
+export const incrementUnreadMessagesInStore = (state, convoId, message) => {
+  return state.map((convo) => {
+    if (convo.id === convoId) {
+      const newConvo = { ...convo };
+      newConvo.unreadMessagesNum += 1;
+      newConvo.unreadMessages.push(message);
+      return newConvo;
+    } else {
+      return convo;
+    }
+  });
+};
+
+export const readUnreadMessages = (state, convoId) => {
+  return state.map((convo) => {
+    if (convo.id === convoId) {
+      const newConvo = { ...convo };
+      newConvo.unreadMessagesNum = 0;
+      newConvo.unreadMessages = [];
+      return newConvo;
+    } else {
+      return convo;
+    }
+  });
+};
+
+export const addLatestReadMessageToStore = (state, convoId, message) => {
+  return state.map((convo) => {
+    if (convo.id === convoId) {
+      const newConvo = { ...convo };
+      newConvo.latestSeenMessageId = message;
+      return newConvo;
+    } else {
+      return convo;
+    }
+  });
+};
+
+export const addLatestReadMessageForAllConversationsToStore = (
+  state,
+  userId
+) => {
+  return state.map((convo) => {
+    const newConvo = { ...convo };
+    if (newConvo.messages) {
+      const filteredMessages = newConvo.messages.filter((message) => {
+        return message.hasBeenSeen === true && message.senderId === userId;
+      });
+      newConvo.latestSeenMessageId =
+        filteredMessages.length > 0 &&
+        filteredMessages[filteredMessages.length - 1].id;
+    }
+    return newConvo;
+  });
+};
