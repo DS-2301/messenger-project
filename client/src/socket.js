@@ -7,7 +7,6 @@ import {
 } from "./store/utils/thunkCreators";
 
 const initSocket = (id, token) => {
-  console.warn(token);
   const socket = io(window.location.origin, { auth: { id, token } });
 
   socket.on("connect", () => {
