@@ -1,5 +1,5 @@
 import axios from "axios";
-import socket from "../../socket";
+import initSocket from "../../socket";
 import {
   gotConversations,
   addConversation,
@@ -14,6 +14,8 @@ import {
 import { gotUser, setFetchingStatus } from "../user";
 import { setActiveChat } from "../activeConversation";
 import store from "..";
+
+let socket = null;
 
 axios.interceptors.request.use(async function (config) {
   const token = await localStorage.getItem("messenger-token");
@@ -30,6 +32,8 @@ export const fetchUser = () => async (dispatch) => {
     const { data } = await axios.get("/auth/user");
     dispatch(gotUser(data));
     if (data.id) {
+      const token = await localStorage.getItem("messenger-token");
+      socket = initSocket(data.id, token);
       socket.emit("go-online", data.id);
     }
   } catch (error) {
@@ -44,6 +48,8 @@ export const register = (credentials) => async (dispatch) => {
     const { data } = await axios.post("/auth/register", credentials);
     await localStorage.setItem("messenger-token", data.token);
     dispatch(gotUser(data));
+    const token = await localStorage.getItem("messenger-token");
+    socket = initSocket(data.id, token);
     socket.emit("go-online", data.id);
   } catch (error) {
     console.error(error);
@@ -56,6 +62,8 @@ export const login = (credentials) => async (dispatch) => {
     const { data } = await axios.post("/auth/login", credentials);
     await localStorage.setItem("messenger-token", data.token);
     dispatch(gotUser(data));
+    const token = await localStorage.getItem("messenger-token");
+    socket = initSocket(data.id, token);
     socket.emit("go-online", data.id);
   } catch (error) {
     console.error(error);
@@ -96,6 +104,7 @@ const sendMessage = (data, body) => {
     message: data.message,
     recipientId: body.recipientId,
     sender: data.sender,
+    convoWith: body.conversationWith,
   });
 };
 
@@ -124,10 +133,11 @@ export const searchUsers = (searchTerm) => async (dispatch) => {
   }
 };
 
-const setUpcomingMessagesToSeen = (messages, convoId) => {
+const setUpcomingMessagesToSeen = (messages, convoId, recipientId) => {
   socket.emit("read-message", {
     messages: messages,
     convoId: convoId,
+    recipientId: recipientId,
   });
 };
 
@@ -136,16 +146,16 @@ const saveReadMessages = async (ids) => {
 };
 
 export const readMessages =
-  (messages, username, convoId) => async (dispatch) => {
+  (messages, username, convoId, recipientId) => async (dispatch) => {
     try {
       if (messages && messages.length > 0) {
         const msgIds = messages.map((message) => message.id);
         await saveReadMessages(msgIds);
         dispatch(setHasBeenSeenStatus(msgIds, convoId));
         dispatch(readAllMessages(convoId));
-        setUpcomingMessagesToSeen(msgIds, convoId);
+        setUpcomingMessagesToSeen(msgIds, convoId, recipientId);
       }
-      dispatch(setActiveChat(username, convoId));
+      dispatch(setActiveChat(username));
     } catch (error) {
       console.error(error);
     }
@@ -154,13 +164,17 @@ export const readMessages =
 export const getUpcomingMessage = (data) => async (dispatch) => {
   dispatch(setNewMessage(data.message, data.sender));
   dispatch(incrementUnreadMessages(data.message.conversationId, data.message));
-  if (store.getState().activeConversation.id === data.message.conversationId) {
+  if (store.getState().activeConversation === data.convoWith) {
     await axios.patch("api/messages", { ids: [data.message.id] });
     dispatch(readAllMessages(data.message.conversationId));
     dispatch(
       setHasBeenSeenStatus([data.message.id], data.message.conversationId)
     );
-    setUpcomingMessagesToSeen([data.message.id], data.message.conversationId);
+    setUpcomingMessagesToSeen(
+      [data.message.id],
+      data.message.conversationId,
+      data.message.senderId
+    );
   }
 };
 

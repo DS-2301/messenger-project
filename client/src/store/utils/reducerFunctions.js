@@ -115,6 +115,10 @@ export const incrementUnreadMessagesInStore = (state, convoId, message) => {
   return state.map((convo) => {
     if (convo.id === convoId) {
       const newConvo = { ...convo };
+      if (!newConvo.unreadMessages && !newConvo.unreadMessagesNum) {
+        newConvo.unreadMessagesNum = 0;
+        newConvo.unreadMessages = [];
+      }
       newConvo.unreadMessagesNum += 1;
       newConvo.unreadMessages.push(message);
       return newConvo;

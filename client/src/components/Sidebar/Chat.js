@@ -22,8 +22,13 @@ const styles = {
 };
 
 const Chat = (props) => {
-  const handleClick = async (username, unreadMessages, convoId) => {
-    await props.readMessages(unreadMessages, username, convoId);
+  const handleClick = async (
+    username,
+    unreadMessages,
+    convoId,
+    recipientId
+  ) => {
+    await props.readMessages(unreadMessages, username, convoId, recipientId);
   };
 
   const { classes } = props;
@@ -35,7 +40,8 @@ const Chat = (props) => {
         handleClick(
           otherUser.username,
           props.conversation.unreadMessages,
-          props.conversation.id
+          props.conversation.id,
+          otherUser.id
         )
       }
       className={classes.root}
@@ -64,8 +70,8 @@ const Chat = (props) => {
 
 const mapDispatchToProps = (dispatch) => {
   return {
-    readMessages: (messages, username, convoId) => {
-      dispatch(readMessages(messages, username, convoId));
+    readMessages: (messages, username, convoId, recipientId) => {
+      dispatch(readMessages(messages, username, convoId, recipientId));
     },
   };
 };
